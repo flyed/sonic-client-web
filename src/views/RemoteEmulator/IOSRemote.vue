@@ -75,6 +75,9 @@ import PocoPane from '../../components/PocoPane.vue';
 import IOSPerf from '../../components/IOSPerf.vue';
 import RemotePageHeader from '../../components/RemotePageHeader.vue';
 
+// rq20250722
+const startTime = ref(null);
+
 const pocoPaneRef = ref(null);
 const iosPerfRef = ref(null);
 const { t: $t } = useI18n();
@@ -1233,7 +1236,19 @@ const close = () => {
     screenWebsocket.close();
     screenWebsocket = null;
   }
-  window.close();
+  // rq20250722
+  if (startTime.value) {
+    const params = {
+      startTime: startTime.value.getTime(),
+      endTime: (new Date()).getTime(),
+      deviceId: route.params.deviceId
+    };
+    axios.post('/controller/use-log', params).finally(()=>{
+      window.close();
+    });
+  } else {
+    window.close();
+  }
 };
 onBeforeUnmount(() => {
   close();
@@ -1250,6 +1265,8 @@ const getDeviceById = (id) => {
         router.replace('/Index/Devices');
         return;
       }
+      // rq20250722
+      startTime.value = new Date();
       axios
         .get('/controller/agents', { params: { id: device.value.agentId } })
         .then((resp) => {
