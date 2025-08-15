@@ -84,7 +84,7 @@ import RemotePageHeader from '../../components/RemotePageHeader.vue';
 
 // rq20250722
 
-const startTime = ref(null)
+const startTime = ref(null);
 
 const pocoPaneRef = ref(null);
 const androidPerfRef = ref(null);
@@ -1540,6 +1540,25 @@ const uploadPackage = (content) => {
       }
     });
 };
+
+const logId = ref(null);
+const updateUseLog = () => {
+  const params = {
+    id: logId.value,
+    startTime: startTime.value.getTime(),
+    endTime: new Date().getTime(),
+    deviceId: route.params.deviceId,
+  };
+  axios
+    .post('/controller/use-log', params)
+    .then((res) => {
+      logId.value = res.data;
+    })
+    .finally(() => {
+      setTimeout(updateUseLog, 2 * 1000);
+    });
+};
+
 const uploadScan = (content) => {
   const formData = new FormData();
   formData.append('file', content.file);
@@ -1653,23 +1672,12 @@ const close = () => {
     destroyAudio();
   }
   // rq20250722
-  if (startTime.value) {
-    const params = {
-      startTime: startTime.value.getTime(),
-      endTime: (new Date()).getTime(),
-      deviceId: route.params.deviceId
-    };
-    axios.post('/controller/use-log', params).finally(()=>{
-      window.close()
-    })
-  }else{
-    window.close()
-  }
-  
+  window.close();
 };
 onBeforeUnmount(() => {
   close();
 });
+
 const getDeviceById = (id) => {
   loading.value = true;
   axios.get('/controller/devices', { params: { id } }).then((resp) => {
@@ -1684,6 +1692,7 @@ const getDeviceById = (id) => {
       }
       // rq20250722
       startTime.value = new Date();
+      updateUseLog();
       axios
         .get('/controller/agents', { params: { id: device.value.agentId } })
         .then((resp) => {
